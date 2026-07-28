@@ -3,6 +3,44 @@
 {% block title %}Terms and Conditions - Spendly{% endblock %}
 
 {% block content %}
+<style>
+    .terms {
+        background: var(--paper-warm);
+        border-top: 1px solid var(--border);
+        border-bottom: 1px solid var(--border);
+        padding: 5rem 2rem;
+    }
+
+    .terms-inner {
+        max-width: var(--max-width);
+        margin: 0 auto;
+    }
+
+    .terms-section {
+        margin-bottom: 3rem;
+    }
+
+    .terms-section:last-child {
+        margin-bottom: 0;
+    }
+
+    .terms-section h2 {
+        color: var(--accent);
+        margin-bottom: 1.5rem;
+        font-family: var(--font-display);
+    }
+
+    .terms-section p {
+        color: var(--ink);
+        line-height: 1.7;
+        margin-bottom: 1.5rem;
+    }
+
+    .terms-section p:last-child {
+        margin-bottom: 0;
+    }
+</style>
+
 <section class="terms">
     <div class="terms-inner">
         <h1>Terms and Conditions</h1>
