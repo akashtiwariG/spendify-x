@@ -13,9 +13,15 @@
         </div>
 
         <div class="auth-card">
-            {% if error %}
-            <div class="auth-error">{{ error }}</div>
-            {% endif %}
+            {% with messages = get_flashed_messages(with_categories=true) %}
+              {% if messages %}
+                {% for category, message in messages %}
+                  <div class="flash-message flash-{{ category }}">
+                    {{ message }}
+                  </div>
+                {% endfor %}
+              {% endif %}
+            {% endwith %}
 
             <form method="POST" action="/login">
                 <div class="form-group">
@@ -29,6 +35,10 @@
                     <input type="password" id="password" name="password"
                            class="form-input" placeholder="Your password"
                            required>
+                </div>
+                <div class="form-group form-check">
+                    <input type="checkbox" class="form-check-input" id="remember" name="remember">
+                    <label class="form-check-label" for="remember">Remember me</label>
                 </div>
                 <button type="submit" class="btn-submit">Sign in</button>
             </form>
