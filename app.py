@@ -1,5 +1,6 @@
-from flask import Flask, render_template
-from database.db import init_db, seed_db
+from flask import Flask, render_template, request, redirect, url_for
+from database.db import init_db, seed_db, get_user_by_email, create_user
+from werkzeug.security import generate_password_hash
 
 app = Flask(__name__)
 
@@ -14,8 +15,37 @@ def landing():
     return render_template("landing.html")
 
 
-@app.route("/register")
+@app.route("/register", methods=["GET", "POST"])
 def register():
+    if request.method == "POST":
+        # Get form data
+        name = request.form.get("name")
+        email = request.form.get("email")
+        password = request.form.get("password")
+
+        # Validate input
+        error = None
+        if not name:
+            error = "Name is required."
+        elif not email:
+            error = "Email is required."
+        elif not password:
+            error = "Password is required."
+        elif len(password) < 8:
+            error = "Password must be at least 8 characters long."
+        elif get_user_by_email(email):
+            error = "Email already registered."
+
+        if error is None:
+            # Hash the password and create the user
+            password_hash = generate_password_hash(password)
+            user_id = create_user(name, email, password_hash)
+            return redirect(url_for("login"))
+
+        # If validation failed, show error
+        return render_template("register.html", error=error)
+
+    # GET request: show the form
     return render_template("register.html")
 
 
