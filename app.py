@@ -1,4 +1,5 @@
 from flask import Flask, render_template
+from database.db import init_db, seed_db
 
 app = Flask(__name__)
 
@@ -6,6 +7,7 @@ app = Flask(__name__)
 # ------------------------------------------------------------------ #
 # Routes                                                              #
 # ------------------------------------------------------------------ #
+
 
 @app.route("/")
 def landing():
@@ -36,6 +38,7 @@ def privacy():
 # Placeholder routes — students will implement these                  #
 # ------------------------------------------------------------------ #
 
+
 @app.route("/logout")
 def logout():
     return "Logout — coming in Step 3"
@@ -59,6 +62,12 @@ def edit_expense(id):
 @app.route("/expenses/<int:id>/delete")
 def delete_expense(id):
     return "Delete expense — coming in Step 9"
+
+
+# Initialize and seed the database before running the app
+with app.app_context():
+    init_db()
+    seed_db()
 
 
 if __name__ == "__main__":
