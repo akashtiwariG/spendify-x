@@ -11,6 +11,16 @@
     {% block head %}{% endblock %}
 </head>
 <body>
+    <!-- Flash messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="flash-message flash-{{ category }}">
+            {{ message }}
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
 
     <nav class="navbar">
         <div class="nav-inner">
@@ -19,8 +29,13 @@
                 <span class="brand-name">Spendly</span>
             </a>
             <div class="nav-links">
-                <a href="{{ url_for('login') }}">Sign in</a>
-                <a href="{{ url_for('register') }}" class="nav-cta">Get started</a>
+                {% if session.user_id %}
+                  <span class="nav-user">Hello, {{ session.user_name }}!</span>
+                  <a href="{{ url_for('logout') }}">Log out</a>
+                {% else %}
+                  <a href="{{ url_for('login') }}">Sign in</a>
+                  <a href="{{ url_for('register') }}" class="nav-cta">Get started</a>
+                {% endif %}
             </div>
         </div>
     </nav>
