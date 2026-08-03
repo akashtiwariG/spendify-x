@@ -101,3 +101,43 @@ def create_user(name, email, password_hash):
     ''', (name, email, password_hash))
     db.commit()
     return cursor.lastrowid
+
+
+def get_user_by_id(user_id):
+    """Get a user by their ID."""
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute('SELECT * FROM users WHERE id = ?', (user_id,))
+    return cursor.fetchone()
+
+
+def update_user_name(user_id, name):
+    """Update a user's name."""
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute('UPDATE users SET name = ? WHERE id = ?', (name, user_id))
+    db.commit()
+    return cursor.rowcount > 0
+
+
+def update_user_email(user_id, email):
+    """Update a user's email, ensuring the new email is unique."""
+    db = get_db()
+    cursor = db.cursor()
+    # First, check if the email is already taken by another user
+    cursor.execute('SELECT id FROM users WHERE email = ? AND id != ?', (email, user_id))
+    if cursor.fetchone() is not None:
+        return False  # Email already exists
+    # Update the email
+    cursor.execute('UPDATE users SET email = ? WHERE id = ?', (email, user_id))
+    db.commit()
+    return cursor.rowcount > 0
+
+
+def update_user_password(user_id, password_hash):
+    """Update a user's password."""
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute('UPDATE users SET password_hash = ? WHERE id = ?', (password_hash, user_id))
+    db.commit()
+    return cursor.rowcount > 0
