@@ -141,3 +141,175 @@ def update_user_password(user_id, password_hash):
     cursor.execute('UPDATE users SET password_hash = ? WHERE id = ?', (password_hash, user_id))
     db.commit()
     return cursor.rowcount > 0
+
+
+def get_expenses_by_user(user_id, limit=None, offset=None, category=None, start_date=None, end_date=None):
+    """Get expenses for a user with optional filtering and pagination."""
+    db = get_db()
+    cursor = db.cursor()
+
+    # Build query dynamically based on filters
+    query = '''
+        SELECT id, amount, category, date, description, created_at
+        FROM expenses
+        WHERE user_id = ?
+    '''
+    params = [user_id]
+
+    if category:
+        query += ' AND category = ?'
+        params.append(category)
+
+    if start_date:
+        query += ' AND date >= ?'
+        params.append(start_date)
+
+    if end_date:
+        query += ' AND date <= ?'
+        params.append(end_date)
+
+    query += ' ORDER BY date DESC, created_at DESC'
+
+    if limit is not None:
+        query += ' LIMIT ?'
+        params.append(limit)
+        if offset is not None:
+            query += ' OFFSET ?'
+            params.append(offset)
+
+    cursor.execute(query, params)
+    return cursor.fetchall()
+
+
+def get_expense_by_id_and_user(expense_id, user_id):
+    """Get a specific expense by ID, ensuring it belongs to the user."""
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute('''
+        SELECT id, amount, category, date, description, created_at
+        FROM expenses
+        WHERE id = ? AND user_id = ?
+    ''', (expense_id, user_id))
+    return cursor.fetchone()
+
+
+def create_expense(user_id, amount, category, date, description):
+    """Create a new expense for a user."""
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute('''
+        INSERT INTO expenses (user_id, amount, category, date, description)
+        VALUES (?, ?, ?, ?, ?)
+    ''', (user_id, amount, category, date, description))
+    db.commit()
+    return cursor.lastrowid
+
+
+def update_expense(expense_id, user_id, amount, category, date, description):
+    """Update an existing expense, ensuring it belongs to the user."""
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute('''
+        UPDATE expenses
+        SET amount = ?, category = ?, date = ?, description = ?
+        WHERE id = ? AND user_id = ?
+    ''', (amount, category, date, description, expense_id, user_id))
+    db.commit()
+    return cursor.rowcount > 0
+
+
+def delete_expense(expense_id, user_id):
+    """Delete an expense, ensuring it belongs to the user."""
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute('DELETE FROM expenses WHERE id = ? AND user_id = ?', (expense_id, user_id))
+    db.commit()
+    return cursor.rowcount > 0
+
+
+def get_expense_summary(user_id, start_date=None, end_date=None):
+    """Get expense summary statistics for a user."""
+    db = get_db()
+    cursor = db.cursor()
+
+    query = '''
+        SELECT
+            COUNT(*) as count,
+            SUM(amount) as total,
+            AVG(amount) as average,
+            MIN(amount) as minimum,
+            MAX(amount) as maximum
+        FROM expenses
+        WHERE user_id = ?
+    '''
+    params = [user_id]
+
+    if start_date:
+        query += ' AND date >= ?'
+        params.append(start_date)
+
+    if end_date:
+        query += ' AND date <= ?'
+        params.append(end_date)
+
+    cursor.execute(query, params)
+    result = cursor.fetchone()
+
+    if result:
+        return {
+            'count': result['count'],
+            'total': result['total'] or 0,
+            'average': result['average'] or 0,
+            'minimum': result['minimum'] or 0,
+            'maximum': result['maximum'] or 0
+        }
+    else:
+        return {
+            'count': 0,
+            'total': 0,
+            'average': 0,
+            'minimum': 0,
+            'maximum': 0
+        }
+
+
+def get_expense_by_category(user_id, start_date=None, end_date=None):
+    """Get expenses grouped by category for a user."""
+    db = get_db()
+    cursor = db.cursor()
+
+    query = '''
+        SELECT
+            category,
+            SUM(amount) as total,
+            COUNT(*) as count,
+            AVG(amount) as average
+        FROM expenses
+        WHERE user_id = ?
+    '''
+    params = [user_id]
+
+    if start_date:
+        query += ' AND date >= ?'
+        params.append(start_date)
+
+    if end_date:
+        query += ' AND date <= ?'
+        params.append(end_date)
+
+    query += ' GROUP BY category ORDER BY total DESC'
+
+    cursor.execute(query, params)
+    results = cursor.fetchall()
+
+    # Convert to list of dictionaries
+    categories = []
+    for row in results:
+        categories.append({
+            'category': row['category'],
+            'total': row['total'],
+            'count': row['count'],
+            'average': row['average']
+        })
+
+    return categories
