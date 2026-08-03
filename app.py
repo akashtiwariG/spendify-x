@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash
-from database.db import init_db, seed_db, get_user_by_email, create_user
+from database.db import init_db, seed_db, get_user_by_email, create_user, get_user_by_id, update_user_name, update_user_email, update_user_password
 from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
@@ -150,13 +150,74 @@ def logout():
 
 
 @app.route("/profile")
+@login_required
 def profile():
-    # Check if user is logged in
-    if 'user_id' not in session:
-        flash("Please log in to access your profile.", "warning")
+    user = get_user_by_id(session['user_id'])
+    if user is None:
+        flash("User not found.", "error")
         return redirect(url_for("login"))
+    return render_template("profile.html", user=user)
 
-    return f"Profile page for {session['user_name']} — coming in Step 4"
+
+@app.route("/profile/update-name", methods=["POST"])
+@login_required
+def update_name():
+    name = request.form.get("name")
+    if not name or not name.strip():
+        flash("Name is required.", "error")
+        return redirect(url_for("profile"))
+    name = name.strip()
+    if update_user_name(session['user_id'], name):
+        flash("Name updated successfully.", "success")
+    else:
+        flash("Failed to update name.", "error")
+    return redirect(url_for("profile"))
+
+@app.route("/profile/update-email", methods=["POST"])
+@login_required
+def update_email():
+    email = request.form.get("email")
+    if not email:
+        flash("Email is required.", "error")
+        return redirect(url_for("profile"))
+    email = email.strip()
+    if "@" not in email:
+        flash("Please enter a valid email address.", "error")
+        return redirect(url_for("profile"))
+    if update_user_email(session['user_id'], email):
+        flash("Email updated successfully.", "success")
+    else:
+        flash("Failed to update email. The email may already be in use.", "error")
+    return redirect(url_for("profile"))
+
+@app.route("/profile/change-password", methods=["POST"])
+@login_required
+def change_password():
+    current_password = request.form.get("current_password")
+    new_password = request.form.get("new_password")
+    confirm_password = request.form.get("confirm_password")
+    if not current_password or not new_password or not confirm_password:
+        flash("All password fields are required.", "error")
+        return redirect(url_for("profile"))
+    if new_password != confirm_password:
+        flash("New password and confirmation do not match.", "error")
+        return redirect(url_for("profile"))
+    if len(new_password) < 8:
+        flash("New password must be at least 8 characters long.", "error")
+        return redirect(url_for("profile"))
+    user = get_user_by_id(session['user_id'])
+    if user is None:
+        flash("User not found.", "error")
+        return redirect(url_for("login"))
+    if not check_password_hash(user['password_hash'], current_password):
+        flash("Current password is incorrect.", "error")
+        return redirect(url_for("login"))
+    new_hash = generate_password_hash(new_password)
+    if update_user_password(session['user_id'], new_hash):
+        flash("Password updated successfully.", "success")
+    else:
+        flash("Failed to update password.", "error")
+    return redirect(url_for("profile"))
 
 
 @app.route("/expenses/add")

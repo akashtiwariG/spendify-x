@@ -8,7 +8,8 @@
       "PowerShell(python C:\\\\Users\\\\Asus\\\\Desktop\\\\expense-tracker\\\\check_user.py)",
       "PowerShell(python -c \"import sqlite3; conn = sqlite3.connect\\('spendly.db'\\); conn.row_factory = sqlite3.Row; c = conn.cursor\\(\\); c.execute\\('SELECT id, name, email FROM users'\\); rows = c.fetchall\\(\\); print\\('Users in database:'\\); for row in rows: print\\(f'  ID: {row[\\\\\"id\\\\\"]}, Name: {row[\\\\\"name\\\\\"]}, Email: {row[\\\\\"email\\\\\"]}'\\); conn.close\\(\\)\")",
       "PowerShell(python -c \"import sqlite3; conn = sqlite3.connect\\('spendly.db'\\); conn.row_factory = sqlite3.Row; c = conn.cursor\\(\\); c.execute\\('SELECT id, name, email FROM users'\\); rows = c.fetchall\\(\\); print\\('Users in database:'\\); [print\\(f'  ID: {row[\\\\\"id\\\\\"]}, Name: {row[\\\\\"name\\\\\"]}, Email: {row[\\\\\"email\\\\\"]}'\\) for row in rows]; conn.close\\(\\)\")",
-      "PowerShell(python C:\\\\Users\\\\Asus\\\\Desktop\\\\expense-tracker\\\\seed_expense.py 2 5 3)"
+      "PowerShell(python C:\\\\Users\\\\Asus\\\\Desktop\\\\expense-tracker\\\\seed_expense.py 2 5 3)",
+      "Bash(git checkout *)"
     ]
   }
 }
