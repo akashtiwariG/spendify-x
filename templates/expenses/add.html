@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block title %}Add Expense - Spendly{% endblock %}
+
+{% block content %}
+<section class="expense-form-section">
+    <div class="expense-form-header">
+        <h1 class="expense-form-title">Add New Expense</h1>
+        <a href="{{ url_for('expenses_index') }}" class="btn-ghost">Back to Expenses</a>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="flash-message flash-{{ category }}">
+            {{ message }}
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <form method="POST" action="{{ url_for('add_expense') }}" class="expense-form">
+        <div class="form-group">
+            <label for="amount">Amount (₹)</label>
+            <input type="number"
+                   id="amount"
+                   name="amount"
+                   step="0.01"
+                   min="0.01"
+                   class="form-input"
+                   required>
+        </div>
+
+        <div class="form-group">
+            <label for="category">Category</label>
+            <select id="category" name="category" class="form-input" required>
+                <option value="">Select a category</option>
+                <option value="Food">Food</option>
+                <option value="Transport">Transport</option>
+                <option value="Bills">Bills</option>
+                <option value="Health">Health</option>
+                <option value="Entertainment">Entertainment</option>
+                <option value="Shopping">Shopping</option>
+                <option value="Other">Other</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="date">Date</label>
+            <input type="date"
+                   id="date"
+                   name="date"
+                   class="form-input"
+                   required>
+        </div>
+
+        <div class="form-group">
+            <label for="description">Description (optional)</label>
+            <input type="text"
+                   id="description"
+                   name="description"
+                   class="form-input"
+                   placeholder="Enter a brief description">
+        </div>
+
+        <div class="form-group">
+            <button type="submit" class="btn-submit">Add Expense</button>
+            <a href="{{ url_for('expenses_index') }}" class="btn-ghost">Cancel</a>
+        </div>
+    </form>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Set today as the default date for the date input
+    document.addEventListener('DOMContentLoaded', function() {
+        const dateInput = document.getElementById('date');
+        const today = new Date().toISOString().split('T')[0];
+        dateInput.value = today;
+    });
+</script>
+{% endblock %}

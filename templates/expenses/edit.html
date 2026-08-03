@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Expense - Spendly{% endblock %}
+
+{% block content %}
+<section class="expense-form-section">
+    <div class="expense-form-header">
+        <h1 class="expense-form-title">Edit Expense</h1>
+        <div class="expense-form-actions">
+            <a href="{{ url_for('expense_detail', id=expense.id) }}" class="btn-ghost">Cancel</a>
+            <a href="{{ url_for('expenses_index') }}" class="btn-ghost">Back to Expenses</a>
+        </div>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="flash-message flash-{{ category }}">
+            {{ message }}
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <form method="POST" action="{{ url_for('edit_expense', id=expense.id) }}" class="expense-form">
+        <div class="form-group">
+            <label for="amount">Amount (₹)</label>
+            <input type="number"
+                   id="amount"
+                   name="amount"
+                   step="0.01"
+                   min="0.01"
+                   value="{{ expense.amount }}"
+                   class="form-input"
+                   required>
+        </div>
+
+        <div class="form-group">
+            <label for="category">Category</label>
+            <select id="category" name="category" class="form-input" required>
+                <option value="">Select a category</option>
+                <option value="Food" {% if expense.category == 'Food' %}selected{% endif %}>Food</option>
+                <option value="Transport" {% if expense.category == 'Transport' %}selected{% endif %}>Transport</option>
+                <option value="Bills" {% if expense.category == 'Bills' %}selected{% endif %}>Bills</option>
+                <option value="Health" {% if expense.category == 'Health' %}selected{% endif %}>Health</option>
+                <option value="Entertainment" {% if expense.category == 'Entertainment' %}selected{% endif %}>Entertainment</option>
+                <option value="Shopping" {% if expense.category == 'Shopping' %}selected{% endif %}>Shopping</option>
+                <option value="Other" {% if expense.category == 'Other' %}selected{% endif %}>Other</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="date">Date</label>
+            <input type="date"
+                   id="date"
+                   name="date"
+                   value="{{ expense.date }}"
+                   class="form-input"
+                   required>
+        </div>
+
+        <div class="form-group">
+            <label for="description">Description (optional)</label>
+            <input type="text"
+                   id="description"
+                   name="description"
+                   value="{{ expense.description or '' }}"
+                   class="form-input"
+                   placeholder="Enter a brief description">
+        </div>
+
+        <div class="form-group">
+            <button type="submit" class="btn-submit">Update Expense</button>
+            <a href="{{ url_for('expense_detail', id=expense.id) }}" class="btn-ghost">Cancel</a>
+        </div>
+    </form>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Ensure the date is properly set
+    document.addEventListener('DOMContentLoaded', function() {
+        const dateInput = document.getElementById('date');
+        if (dateInput.value === '') {
+            const today = new Date().toISOString().split('T')[0];
+            dateInput.value = today;
+        }
+    });
+</script>
+{% endblock %}

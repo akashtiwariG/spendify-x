@@ -1,5 +1,5 @@
-from flask import Flask, render_template, request, redirect, url_for, session, flash
-from database.db import init_db, seed_db, get_user_by_email, create_user, get_user_by_id, update_user_name, update_user_email, update_user_password
+from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
+from database.db import init_db, seed_db, get_user_by_email, create_user, get_user_by_id, update_user_name, update_user_email, update_user_password, get_expenses_by_user, get_expense_by_id_and_user, create_expense, update_expense, delete_expense, get_expense_summary, get_expense_by_category
 from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
@@ -220,22 +220,285 @@ def change_password():
     return redirect(url_for("profile"))
 
 
-@app.route("/expenses/add")
+@app.route("/expenses")
+@login_required
+def expenses_index():
+    """Display a list of expenses with filtering and pagination."""
+    # Get query parameters for filtering
+    category = request.args.get('category', '')
+    start_date = request.args.get('start_date', '')
+    end_date = request.args.get('end_date', '')
+    page = int(request.args.get('page', 1))
+    per_page = int(request.args.get('per_page', 10))
+
+    # Calculate offset for pagination
+    offset = (page - 1) * per_page
+
+    # Get expenses with filters
+    expenses = get_expenses_by_user(
+        session['user_id'],
+        limit=per_page,
+        offset=offset,
+        category=category if category else None,
+        start_date=start_date if start_date else None,
+        end_date=end_date if end_date else None
+    )
+
+    # Get total count for pagination (without limit/offset)
+    all_expenses = get_expenses_by_user(
+        session['user_id'],
+        category=category if category else None,
+        start_date=start_date if start_date else None,
+        end_date=end_date if end_date else None
+    )
+    total_count = len(all_expenses)
+    total_pages = (total_count + per_page - 1) // per_page  # Ceiling division
+
+    return render_template("expenses/index.html",
+                         expenses=expenses,
+                         current_page=page,
+                         total_pages=total_pages,
+                         total_count=total_count,
+                         per_page=per_page,
+                         category=category,
+                         start_date=start_date,
+                         end_date=end_date)
+
+
+@app.route("/expenses/add", methods=["GET", "POST"])
 @login_required
 def add_expense():
-    return "Add expense — coming in Step 7"
+    """Handle adding a new expense."""
+    if request.method == "GET":
+        return render_template("expenses/add.html")
+
+    # POST request - process form submission
+    amount = request.form.get("amount")
+    category = request.form.get("category")
+    date = request.form.get("date")
+    description = request.form.get("description", "")
+
+    # Validate input
+    error = None
+    if not amount:
+        error = "Amount is required."
+    elif not category:
+        error = "Category is required."
+    elif not date:
+        error = "Date is required."
+
+    if error is not None:
+        flash(error, "error")
+        return render_template("expenses/add.html")
+
+    try:
+        amount_float = float(amount)
+        if amount_float <= 0:
+            raise ValueError("Amount must be positive")
+    except ValueError:
+        flash("Amount must be a positive number.", "error")
+        return render_template("expenses/add.html")
+
+    # Create the expense
+    expense_id = create_expense(
+        session['user_id'],
+        amount_float,
+        category,
+        date,
+        description
+    )
+
+    flash("Expense added successfully!", "success")
+    return redirect(url_for('expenses_index'))
 
 
-@app.route("/expenses/<int:id>/edit")
+@app.route("/expenses/<int:id>")
+@login_required
+def expense_detail(id):
+    """Display details of a specific expense."""
+    expense = get_expense_by_id_and_user(id, session['user_id'])
+    if expense is None:
+        flash("Expense not found.", "error")
+        return redirect(url_for('expenses_index'))
+
+    return render_template("expenses/detail.html", expense=expense)
+
+
+@app.route("/expenses/<int:id>/edit", methods=["GET", "POST"])
 @login_required
 def edit_expense(id):
-    return "Edit expense — coming in Step 8"
+    """Handle editing an existing expense."""
+    # First check if the expense exists and belongs to the user
+    expense = get_expense_by_id_and_user(id, session['user_id'])
+    if expense is None:
+        flash("Expense not found.", "error")
+        return redirect(url_for('expenses_index'))
+
+    if request.method == "GET":
+        return render_template("expenses/edit.html", expense=expense)
+
+    # POST request - process form submission
+    amount = request.form.get("amount")
+    category = request.form.get("category")
+    date = request.form.get("date")
+    description = request.form.get("description", "")
+
+    # Validate input
+    error = None
+    if not amount:
+        error = "Amount is required."
+    elif not category:
+        error = "Category is required."
+    elif not date:
+        error = "Date is required."
+
+    if error is not None:
+        flash(error, "error")
+        return render_template("expenses/edit.html", expense=expense)
+
+    try:
+        amount_float = float(amount)
+        if amount_float <= 0:
+            raise ValueError("Amount must be positive")
+    except ValueError:
+        flash("Amount must be a positive number.", "error")
+        return render_template("expenses/edit.html", expense=expense)
+
+    # Update the expense
+    if update_expense(id, session['user_id'], amount_float, category, date, description):
+        flash("Expense updated successfully!", "success")
+        return redirect(url_for('expense_detail', id=id))
+    else:
+        flash("Failed to update expense.", "error")
+        return render_template("expenses/edit.html", expense=expense)
 
 
-@app.route("/expenses/<int:id>/delete")
+@app.route("/expenses/<int:id>/delete", methods=["POST"])
 @login_required
 def delete_expense(id):
-    return "Delete expense — coming in Step 9"
+    """Handle deleting an expense."""
+    # First check if the expense exists and belongs to the user
+    expense = get_expense_by_id_and_user(id, session['user_id'])
+    if expense is None:
+        flash("Expense not found.", "error")
+        return redirect(url_for('expenses_index'))
+
+    # Delete the expense
+    if delete_expense(id, session['user_id']):
+        flash("Expense deleted successfully.", "success")
+    else:
+        flash("Failed to delete expense.", "error")
+
+    return redirect(url_for('expenses_index'))
+
+
+# Summary Statistics Routes
+@app.route("/expenses/summary")
+@login_required
+def expenses_summary():
+    """Get summary statistics for expenses."""
+    # Get date range parameters
+    start_date = request.args.get('start_date', '')
+    end_date = request.args.get('end_date', '')
+
+    # Get summary data
+    summary = get_expense_summary(
+        session['user_id'],
+        start_date=start_date if start_date else None,
+        end_date=end_date if end_date else None
+    )
+
+    # Return as JSON for API consumption
+    return jsonify(summary)
+
+
+@app.route("/expenses/summary/daily")
+@login_required
+def expenses_summary_daily():
+    """Get daily spending trends."""
+    # For simplicity, we'll return last 30 days of daily totals
+    # In a more advanced implementation, this could accept date range parameters
+    summary = get_expense_summary(
+        session['user_id']
+        # Could add date range parameters here too
+    )
+
+    # For now, return basic summary - in a full implementation,
+    # we'd have a separate function for daily trends
+    return jsonify({
+        'period': 'daily',
+        'data': summary  # This would be enhanced with actual daily data
+    })
+
+
+@app.route("/expenses/summary/weekly")
+@login_required
+def expenses_summary_weekly():
+    """Get weekly spending trends."""
+    summary = get_expense_summary(
+        session['user_id']
+    )
+
+    return jsonify({
+        'period': 'weekly',
+        'data': summary  # This would be enhanced with actual weekly data
+    })
+
+
+@app.route("/expenses/summary/monthly")
+@login_required
+def expenses_summary_monthly():
+    """Get monthly spending trends."""
+    summary = get_expense_summary(
+        session['user_id']
+    )
+
+    return jsonify({
+        'period': 'monthly',
+        'data': summary  # This would be enhanced with actual monthly data
+    })
+
+
+# Category Breakdown Routes
+@app.route("/expenses/categories")
+@login_required
+def expenses_categories():
+    """Get spending breakdown by category."""
+    # Get date range parameters
+    start_date = request.args.get('start_date', '')
+    end_date = request.args.get('end_date', '')
+
+    # Get category breakdown data
+    categories = get_expense_by_category(
+        session['user_id'],
+        start_date=start_date if start_date else None,
+        end_date=end_date if end_date else None
+    )
+
+    # Return as JSON for API consumption
+    return jsonify({'categories': categories})
+
+
+@app.route("/expenses/categories/trends")
+@login_required
+def expenses_categories_trends():
+    """Get category spending trends over time."""
+    # For now, return current category breakdown
+    # In a full implementation, this would show trends over time
+    categories = get_expense_by_category(
+        session['user_id']
+    )
+
+    return jsonify({
+        'trends': [
+            {
+                'category': cat['category'],
+                'amount': cat['total'],
+                'period': 'current'  # Would be enhanced with time series data
+            }
+            for cat in categories
+        ]
+    })
 
 
 # Initialize and seed the database before running the app
