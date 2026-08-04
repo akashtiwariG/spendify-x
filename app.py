@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
 from database.db import init_db, seed_db, get_user_by_email, create_user, get_user_by_id, update_user_name, update_user_email, update_user_password, get_expenses_by_user, get_expense_by_id_and_user, create_expense, update_expense, delete_expense, get_expense_summary, get_expense_by_category
 from werkzeug.security import generate_password_hash, check_password_hash
+import re
 
 app = Flask(__name__)
 app.secret_key = 'your-secret-key-here'  # In production, use a secure random key
@@ -156,7 +157,52 @@ def profile():
     if user is None:
         flash("User not found.", "error")
         return redirect(url_for("login"))
-    return render_template("profile.html", user=user)
+
+    # Get date filter parameters
+    start_date = request.args.get('start_date', '')
+    end_date = request.args.get('end_date', '')
+
+    # Validate date format and logic
+    error_message = None
+    if start_date or end_date:
+        # Basic validation - check if dates are in YYYY-MM-DD format
+        date_pattern = r'^\d{4}-\d{2}-\d{2}$'
+
+        if start_date and not re.match(date_pattern, start_date):
+            error_message = "Start date must be in YYYY-MM-DD format."
+        elif end_date and not re.match(date_pattern, end_date):
+            error_message = "End date must be in YYYY-MM-DD format."
+        elif start_date and end_date and start_date > end_date:
+            error_message = "Start date cannot be after end date."
+
+    # If there's an error, clear the dates to avoid processing with invalid data
+    if error_message:
+        start_date = ''
+        end_date = ''
+
+    # Get expense summary data
+    summary_data = get_expense_summary(
+        session['user_id'],
+        start_date=start_date if start_date else None,
+        end_date=end_date if end_date else None
+    )
+
+    # Get category breakdown data
+    categories_data = get_expense_by_category(
+        session['user_id'],
+        start_date=start_date if start_date else None,
+        end_date=end_date if end_date else None
+    )
+
+    return render_template("profile.html",
+                         user=user,
+                         start_date=start_date,
+                         end_date=end_date,
+                         total_expenses=summary_data['total'],
+                         average_expense=summary_data['average'],
+                         expenses_count=summary_data['count'],
+                         categories=categories_data,
+                         error_message=error_message)
 
 
 @app.route("/profile/update-name", methods=["POST"])
