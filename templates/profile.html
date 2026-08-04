@@ -3,6 +3,8 @@
 {% block title %}Profile - Spendly{% endblock %}
 
 {% block content %}
+{% set currency_symbol = '₹' %}
+{% set currency_format = '%.2f' %}
 
 <section class="profile-section">
     <div class="profile-container">
@@ -58,11 +60,11 @@
                     <div class="summary-stats">
                         <div class="stat-item">
                             <h3>Total Expenses</h3>
-                            <p>₹{{ "%.2f"|format(total_expenses) }}</p>
+                            <p>{{ currency_symbol }}{{ currency_format|format(total_expenses) }}</p>
                         </div>
                         <div class="stat-item">
                             <h3>Average Expense</h3>
-                            <p>₹{{ "%.2f"|format(average_expense) }}</p>
+                            <p>{{ currency_symbol }}{{ currency_format|format(average_expense) }}</p>
                         </div>
                         <div class="stat-item">
                             <h3>Expense Count</h3>
@@ -77,13 +79,13 @@
                                 {% for category in categories %}
                                     <li>
                                         <span class="category-name">{{ category.category }}</span>:
-                                        <span class="category-amount">₹{{ "%.2f"|format(category.total) }}</span>
+                                        <span class="category-amount">{{ currency_symbol }}{{ currency_format|format(category.total) }}</span>
                                         (<span class="category-count">{{ category.count }}</span> transactions)
                                     </li>
                                 {% endfor %}
                             </ul>
                         {% else %}
-                            <p>No expenses categorized for this period.</p>
+                            <p class="no-expenses">No expenses found for the selected period.</p>
                         {% endif %}
                     </div>
                 {% else %}

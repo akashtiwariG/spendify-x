@@ -1,7 +1,35 @@
-from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
-from database.db import init_db, seed_db, get_user_by_email, create_user, get_user_by_id, update_user_name, update_user_email, update_user_password, get_expenses_by_user, get_expense_by_id_and_user, create_expense, update_expense, delete_expense, get_expense_summary, get_expense_by_category
+from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify, g
+from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
+from database.db import init_db, seed_db, get_user_by_email, create_user, get_user_by_id, update_user_name, update_user_email, update_user_password, get_expenses_by_user, get_expense_by_id_and_user, create_expense, update_expense, delete_expense, get_expense_summary, get_expense_by_category
 import re
+
+
+def validate_date(date_str):
+    """Validate a date string in YYYY-MM-DD format.
+
+    Args:
+        date_str (str): Date string to validate
+
+    Returns:
+        tuple: (is_valid, error_message) where is_valid is boolean and
+               error_message is None if valid, otherwise contains error message
+    """
+    if not date_str:
+        return True, None
+
+    # Check format first
+    date_pattern = r'^\d{4}-\d{2}-\d{2}$'
+    if not re.match(date_pattern, date_str):
+        return False, "Date must be in YYYY-MM-DD format."
+
+    # Check if it's a valid calendar date
+    try:
+        datetime.strptime(date_str, '%Y-%m-%d')
+        return True, None
+    except ValueError:
+        return False, "Invalid date. Please enter a valid calendar date."
+
 
 app = Flask(__name__)
 app.secret_key = 'your-secret-key-here'  # In production, use a secure random key
@@ -159,45 +187,55 @@ def profile():
         return redirect(url_for("login"))
 
     # Get date filter parameters
-    start_date = request.args.get('start_date', '')
-    end_date = request.args.get('end_date', '')
+    form_start_date = request.args.get('start_date', '')
+    form_end_date = request.args.get('end_date', '')
 
     # Validate date format and logic
     error_message = None
-    if start_date or end_date:
-        # Basic validation - check if dates are in YYYY-MM-DD format
-        date_pattern = r'^\d{4}-\d{2}-\d{2}$'
+    start_date_valid = True
+    end_date_valid = True
 
-        if start_date and not re.match(date_pattern, start_date):
-            error_message = "Start date must be in YYYY-MM-DD format."
-        elif end_date and not re.match(date_pattern, end_date):
-            error_message = "End date must be in YYYY-MM-DD format."
-        elif start_date and end_date and start_date > end_date:
+    if form_start_date:
+        is_valid_start, start_date_error = validate_date(form_start_date)
+        if not is_valid_start:
+            start_date_valid = False
+            if not error_message:  # Only set error message if not already set
+                error_message = start_date_error
+
+    if form_end_date:
+        is_valid_end, end_date_error = validate_date(form_end_date)
+        if not is_valid_end:
+            end_date_valid = False
+            if not error_message:  # Only set error message if not already set
+                error_message = end_date_error
+
+    # If both dates are valid, check that start_date is not after end_date
+    if start_date_valid and end_date_valid:
+        if form_start_date and form_end_date and form_start_date > form_end_date:
             error_message = "Start date cannot be after end date."
 
-    # If there's an error, clear the dates to avoid processing with invalid data
-    if error_message:
-        start_date = ''
-        end_date = ''
+    # For database queries, use the form values only if they are valid
+    query_start_date = form_start_date if start_date_valid and form_start_date else None
+    query_end_date = form_end_date if end_date_valid and form_end_date else None
 
     # Get expense summary data
     summary_data = get_expense_summary(
         session['user_id'],
-        start_date=start_date if start_date else None,
-        end_date=end_date if end_date else None
+        start_date=query_start_date,
+        end_date=query_end_date
     )
 
     # Get category breakdown data
     categories_data = get_expense_by_category(
         session['user_id'],
-        start_date=start_date if start_date else None,
-        end_date=end_date if end_date else None
+        start_date=query_start_date,
+        end_date=query_end_date
     )
 
     return render_template("profile.html",
                          user=user,
-                         start_date=start_date,
-                         end_date=end_date,
+                         start_date=form_start_date,
+                         end_date=form_end_date,
                          total_expenses=summary_data['total'],
                          average_expense=summary_data['average'],
                          expenses_count=summary_data['count'],
@@ -545,6 +583,13 @@ def expenses_categories_trends():
             for cat in categories
         ]
     })
+
+
+@app.teardown_appcontext
+def close_db(error):
+    """Closes the database again at the end of the request."""
+    if hasattr(g, '_database'):
+        g._database.close()
 
 
 # Initialize and seed the database before running the app

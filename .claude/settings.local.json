@@ -14,7 +14,8 @@
       "Bash(git branch *)",
       "Bash(git add *)",
       "Bash(git commit *)",
-      "PowerShell(python seed_expense_script.py 5 3 6)"
+      "PowerShell(python seed_expense_script.py 5 3 6)",
+      "Skill(code-review-feature)"
     ]
   }
 }

@@ -1,7 +1,7 @@
 import os
 import sqlite3
 
-from flask import g
+from flask import g, current_app
 from werkzeug.security import generate_password_hash
 
 DATABASE = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'spendly.db')
@@ -10,7 +10,9 @@ def get_db():
     """Returns a SQLite connection with row_factory and foreign keys enabled."""
     db = getattr(g, '_database', None)
     if db is None:
-        db = g._database = sqlite3.connect(DATABASE)
+        # Use the database path from the current app's config, or fall back to the default
+        database_path = current_app.config.get('DATABASE', DATABASE)
+        db = g._database = sqlite3.connect(database_path)
         db.row_factory = sqlite3.Row
         # Enable foreign key constraints
         db.execute("PRAGMA foreign_keys = ON")
