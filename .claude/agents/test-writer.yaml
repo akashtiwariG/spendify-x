@@ -1,0 +1,9 @@
+name: test-writer
+description: Generates pytest test cases for Spendly features based on feature specifications
+inputs:
+  spec_file:
+    description: "The spec file to base tests on (e.g., '01-database-setup')"
+    type: string
+    required: true
+output_format: text
+# This agent uses the general-purpose agent type with a specific prompt template
