@@ -15,7 +15,18 @@
       "Bash(git add *)",
       "Bash(git commit *)",
       "PowerShell(python seed_expense_script.py 5 3 6)",
-      "Skill(code-review-feature)"
+      "Skill(code-review-feature)",
+      "mcp__sqlite__list_tables",
+      "mcp__sqlite__describe_table",
+      "mcp__plugin_figma_figma__get_metadata",
+      "mcp__plugin_figma_figma__get_design_context",
+      "mcp__plugin_figma_figma__download_assets",
+      "mcp__plugin_figma_figma__get_screenshot",
+      "WebFetch(domain:www.figma.com)",
+      "Bash(curl -s -o /dev/null -w \"HTTP %{http_code}\\\\nFinal URL: %{url_effective}\\\\n\" -L \"http://localhost:5001/analytics\")",
+      "Bash(curl *)",
+      "mcp__github__get_me",
+      "mcp__github__search_repositories"
     ]
   }
 }

@@ -102,6 +102,7 @@ a { color: inherit; text-decoration: none; }
 
 .nav-links a { color: var(--ink-muted); transition: color 0.2s; }
 .nav-links a:hover { color: var(--ink); }
+.nav-links a.active { color: var(--ink); font-weight: 600; }
 
 .nav-cta {
     background: var(--ink) !important;
@@ -558,4 +559,112 @@ a { color: inherit; text-decoration: none; }
 @media (max-width: 600px) {
     .nav-links a:not(.nav-cta) { display: none; }
     .hero { padding: 3rem 1rem 2rem; }
+}
+
+/* ------------------------------------------------------------------ */
+/* Coming Soon (Analytics)                                             */
+/* ------------------------------------------------------------------ */
+
+.coming-soon {
+    position: relative;
+    min-height: calc(100vh - 60px - 100px);
+    background: var(--paper-card);
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4rem 2rem;
+}
+
+/* Decorative outline circles in the four corners */
+.deco {
+    position: absolute;
+    border: 1.5px solid var(--border);
+    border-radius: 50%;
+    pointer-events: none;
+}
+.deco-tl-outer { left: -120px; top: -120px; width: 380px; height: 380px; }
+.deco-tl-inner { left: -60px;  top: -60px;  width: 220px; height: 220px; }
+.deco-tr-outer { right: -140px; top: -140px; width: 400px; height: 400px; }
+.deco-tr-inner { right: -80px;  top: -80px;  width: 240px; height: 240px; }
+.deco-bl-outer { left: -100px; bottom: -100px; width: 340px; height: 340px; }
+.deco-bl-inner { left: -40px;  bottom: -40px;  width: 200px; height: 200px; }
+.deco-br-outer { right: -120px; bottom: -120px; width: 360px; height: 360px; }
+.deco-br-inner { right: -50px;  bottom: -50px;  width: 210px; height: 210px; }
+
+.coming-soon-inner {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+    max-width: 520px;
+    width: 100%;
+    text-align: center;
+}
+
+.coming-soon-icon {
+    width: 96px;
+    height: 96px;
+    background: var(--accent);
+    border-radius: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.coming-soon-badge {
+    display: inline-block;
+    background: var(--accent);
+    color: #ffffff;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 0.55rem 1.5rem;
+    border-radius: 999px;
+}
+
+.coming-soon-title {
+    font-family: var(--font-body);
+    font-weight: 800;
+    font-size: clamp(2rem, 4vw, 2.625rem);
+    line-height: 1.1;
+    color: #111827;
+    margin: 0;
+}
+
+.coming-soon-body {
+    font-family: var(--font-body);
+    font-size: 1rem;
+    line-height: 1.65;
+    color: #6b7280;
+    max-width: 420px;
+    margin: 0;
+}
+
+.coming-soon-dots {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    height: 10px;
+}
+.coming-soon-dots span {
+    width: 10px;
+    height: 10px;
+    background: #9ca3af;
+    border-radius: 50%;
+    display: block;
+}
+
+.coming-soon-tagline {
+    font-family: var(--font-body);
+    font-size: 0.875rem;
+    color: #5a8a72;
+    margin: 0;
+}
+
+@media (max-width: 600px) {
+    .deco { display: none; }
+    .coming-soon { padding: 3rem 1.5rem; }
 }

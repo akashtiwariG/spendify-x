@@ -304,6 +304,13 @@ def change_password():
     return redirect(url_for("profile"))
 
 
+@app.route("/analytics")
+@login_required
+def analytics():
+    """Analytics Coming Soon page (placeholder)."""
+    return render_template("analytics.html")
+
+
 @app.route("/expenses")
 @login_required
 def expenses_index():
