@@ -304,6 +304,13 @@ def change_password():
     return redirect(url_for("profile"))
 
 
+@app.route("/analytics")
+@login_required
+def analytics():
+    """Analytics Coming Soon page (placeholder)."""
+    return render_template("analytics.html")
+
+
 @app.route("/expenses")
 @login_required
 def expenses_index():
@@ -370,6 +377,10 @@ def add_expense():
         error = "Category is required."
     elif not date:
         error = "Date is required."
+    else:
+        is_valid_date, date_error = validate_date(date)
+        if not is_valid_date:
+            error = date_error
 
     if error is not None:
         flash(error, "error")
