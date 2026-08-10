@@ -377,6 +377,10 @@ def add_expense():
         error = "Category is required."
     elif not date:
         error = "Date is required."
+    else:
+        is_valid_date, date_error = validate_date(date)
+        if not is_valid_date:
+            error = date_error
 
     if error is not None:
         flash(error, "error")
