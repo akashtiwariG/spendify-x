@@ -1,8 +1,10 @@
+import os
+import re
+
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify, g
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
 from database.db import init_db, seed_db, get_user_by_email, create_user, get_user_by_id, update_user_name, update_user_email, update_user_password, get_expenses_by_user, get_expense_by_id_and_user, create_expense, update_expense, delete_expense, get_expense_summary, get_expense_by_category
-import re
 
 
 def validate_date(date_str):
@@ -32,9 +34,18 @@ def validate_date(date_str):
 
 
 app = Flask(__name__)
-app.secret_key = 'your-secret-key-here'  # In production, use a secure random key
+# SECRET_KEY: required for sessions. Read from env on deploy; fall back to a
+# development default so local `python app.py` still works without setup.
+app.secret_key = os.environ.get('SECRET_KEY', 'your-secret-key-here')
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['PERMANENT_SESSION_LIFETIME'] = 3600  # 1 hour
+# DATABASE: allow the deploy target (Railway / Docker / tests) to point the
+# SQLite file at a writable path via the DATABASE_PATH env var. Defaults to
+# the local file in the project root for `python app.py` development use.
+app.config['DATABASE'] = os.environ.get(
+    'DATABASE_PATH',
+    os.path.join(os.path.dirname(os.path.abspath(__file__)), 'spendly.db'),
+)
 
 
 def is_authenticated():
@@ -603,11 +614,18 @@ def close_db(error):
         g._database.close()
 
 
-# Initialize and seed the database before running the app
+# Initialise the database schema. `seed_db()` is gated on the SEED_DB env var
+# so that restarts on Railway don't wipe user data; flip it on once if you
+# need to (re)create the demo user + sample expenses.
 with app.app_context():
     init_db()
-    seed_db()
+    if os.environ.get('SEED_DB', '').lower() in ('1', 'true', 'yes'):
+        seed_db()
 
 
 if __name__ == "__main__":
-    app.run(debug=True, port=5001)
+    # Local dev: debug on, port 5001. On Railway/Gunicorn, this block is
+    # skipped — `gunicorn app:app` runs the WSGI app directly.
+    debug = os.environ.get('FLASK_DEBUG', '1') == '1'
+    port = int(os.environ.get('PORT', '5001'))
+    app.run(host='0.0.0.0', debug=debug, port=port)
